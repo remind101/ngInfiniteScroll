@@ -1,8 +1,27 @@
 mod = angular.module('infinite-scroll', [])
 
+# from jQuery UI (https://github.com/jquery/jquery-ui/blob/2f497023261a7400295f4dd64c45139232a0ea4f/ui/jquery.ui.core.js#L60)
+$.fn.scrollParent = ->
+  scrollParent = null
+  if ($.browser?.msie and (/(static|relative)/).test @css 'position') or (/absolute/).test @css 'position'
+    scrollParent = @parents()
+      .filter ->
+        (/(relative|absolute|fixed)/).test($.css(this, 'position')) and (/(auto|scroll)/).test($.css(this, 'overflow') + $.css(this, 'overflow-y') + $.css(this, 'overflow-x'))
+      .eq 0
+  else
+    scrollParent = @parents()
+      .filter ->
+        (/(auto|scroll)/).test($.css(this, 'overflow') + $.css(this, 'overflow-y') + $.css(this, 'overflow-x'))
+      .eq 0
+  if (/fixed/).test(@css 'position') or not scrollParent.length
+    null # @[0].ownerDocument ? document
+  else
+    scrollParent
+
 mod.directive 'infiniteScroll', ['$rootScope', '$window', '$timeout', ($rootScope, $window, $timeout) ->
   link: (scope, elem, attrs) ->
     $window = angular.element($window)
+    $scrollParent = elem.scrollParent?() ? $window
 
     # infinite-scroll-distance specifies how close to the bottom of the page
     # the window is allowed to be before we trigger a new scroll. The value
@@ -29,16 +48,18 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$timeout', ($rootScop
           checkWhenEnabled = false
           handler()
 
+    elementTop = elem.position().top
+
     # infinite-scroll specifies a function to call when the window
     # is scrolled within a certain range from the bottom of the
     # document. It is recommended to use infinite-scroll-disabled
     # with a boolean that is set to true when the function is
     # called in order to throttle the function call.
     handler = ->
-      windowBottom = $window.height() + $window.scrollTop()
-      elementBottom = elem.offset().top + elem.height()
-      remaining = elementBottom - windowBottom
-      shouldScroll = remaining <= $window.height() * scrollDistance
+      elementBottom = elementTop + elem.height()
+      scrollBottom = $scrollParent.height() + $scrollParent.scrollTop()
+      remaining = elementBottom - scrollBottom
+      shouldScroll = remaining <= $scrollParent.height() * scrollDistance
 
       if shouldScroll && scrollEnabled
         if $rootScope.$$phase
@@ -48,9 +69,9 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$timeout', ($rootScop
       else if shouldScroll
         checkWhenEnabled = true
 
-    $window.on 'scroll', handler
+    $scrollParent.on 'scroll', handler
     scope.$on '$destroy', ->
-      $window.off 'scroll', handler
+      $scrollParent.off 'scroll', handler
 
     $timeout (->
       if attrs.infiniteScrollImmediateCheck
