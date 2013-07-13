@@ -1,27 +1,15 @@
 mod = angular.module('infinite-scroll', [])
 
-# from jQuery UI (https://github.com/jquery/jquery-ui/blob/2f497023261a7400295f4dd64c45139232a0ea4f/ui/jquery.ui.core.js#L60)
-$.fn.scrollParent = ->
-  scrollParent = null
-  if ($.browser?.msie and (/(static|relative)/).test @css 'position') or (/absolute/).test @css 'position'
-    scrollParent = @parents()
-      .filter ->
-        (/(relative|absolute|fixed)/).test($.css(this, 'position')) and (/(auto|scroll)/).test($.css(this, 'overflow') + $.css(this, 'overflow-y') + $.css(this, 'overflow-x'))
-      .eq 0
-  else
-    scrollParent = @parents()
-      .filter ->
-        (/(auto|scroll)/).test($.css(this, 'overflow') + $.css(this, 'overflow-y') + $.css(this, 'overflow-x'))
-      .eq 0
-  if (/fixed/).test(@css 'position') or not scrollParent.length
-    null # @[0].ownerDocument ? document
-  else
-    scrollParent
-
 mod.directive 'infiniteScroll', ['$rootScope', '$window', '$timeout', ($rootScope, $window, $timeout) ->
   link: (scope, elem, attrs) ->
     $window = angular.element($window)
-    $scrollParent = elem.scrollParent?() ? $window
+
+    # from jQuery UI (https://github.com/jquery/jquery-ui/blob/2f497023261a7400295f4dd64c45139232a0ea4f/ui/jquery.ui.core.js#L60)
+    $scrollParent = elem.parents()
+      .filter ->
+        (/(auto|scroll)/).test ($.css this, 'overflow') + ($.css this, 'overflow-y')
+      .eq 0
+    $scrollParent = $window if $scrollParent.length == 0
 
     # infinite-scroll-distance specifies how close to the bottom of the page
     # the window is allowed to be before we trigger a new scroll. The value
