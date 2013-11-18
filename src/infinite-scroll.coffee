@@ -11,6 +11,11 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$timeout', ($rootScop
       .eq 0
     $scrollParent = $window if $scrollParent.length == 0
 
+    # inifinite-scroll-debounce specifies a debounce delay to be used for
+    # scroll events, to prevent the scroll event from being fired too often.
+    debounceDelay = attrs.infiniteScrollDebounce
+    debounceDelay = parseInt(debounceDelay, 10) if debounceDelay
+
     # infinite-scroll-distance specifies how close to the bottom of the page
     # the window is allowed to be before we trigger a new scroll. The value
     # provided is multiplied by the window height; for example, to load
@@ -56,6 +61,8 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$timeout', ($rootScop
           scope.$apply attrs.infiniteScroll
       else if shouldScroll
         checkWhenEnabled = true
+
+    handler = _.debounce(handler, debounceDelay) if debounceDelay
 
     $scrollParent.on 'scroll', handler
     scope.$on '$destroy', ->
