@@ -41,14 +41,13 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$timeout', ($rootScop
           checkWhenEnabled = false
           handler()
 
-    elementTop = elem.position().top
-
     # infinite-scroll specifies a function to call when the window
     # is scrolled within a certain range from the bottom of the
     # document. It is recommended to use infinite-scroll-disabled
     # with a boolean that is set to true when the function is
     # called in order to throttle the function call.
     handler = ->
+      elementTop = elem.position().top
       elementBottom = elementTop + elem.height()
       scrollBottom = $scrollParent.height() + $scrollParent.scrollTop()
       remaining = elementBottom - scrollBottom
